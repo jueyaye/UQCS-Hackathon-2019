@@ -365,7 +365,32 @@ function initEvents(app) {
         );
 
         const payload = JSON.parse(body.payload);
-        console.log(payload);
+
+        if (payload.action === "opened") {
+          const lists = await trello.getListsOnBoard(
+            project,
+            project.trelloDetails
+          );
+
+          let issuesList;
+          for (let i = 0; i < lists.length; i += 1) {
+            if (lists[i].name === "Issues") issuesList = lists[i];
+          }
+
+          await trello.addCard(project, issuesList, {
+            name: payload.issue.title,
+            description: payload.issue.url
+          });
+
+          await slack.sendTemplate(
+            project,
+            slack.messageTemplate(
+              `New issue created: ${payload.issue.title} (${payload.issue.url})`
+            )
+          );
+
+          return res.send();
+        }
 
         /**
          * Pull request activity
