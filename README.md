@@ -12,6 +12,3 @@ ashjasjbfhfqwf
 mkjfjsd
 dgwbjkrnrvr
 lnvksnlfnkv
-aifsoaifhwqofhwqofhwq
-pwjfpiejfj32ifji2
-lpwmfgp2pp2
