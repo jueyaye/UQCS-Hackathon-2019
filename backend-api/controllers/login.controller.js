@@ -1,50 +1,59 @@
-
-let models = require('../db/models'),
-  passport = require('passport'),
-  auth = require('../utils/auth.util'),
-  randtoken = require('rand-token'),
-  config = require('config'),
-  logger = require('tracer').colorConsole();
+const passport = require("passport");
+const randtoken = require("rand-token");
+const logger = require("tracer").colorConsole();
+const auth = require("../utils/auth.util");
+const models = require("../db/models");
 
 function authenticate(req, res) {
-  passport.authenticate('local', {
-    session: false
-  }, (err, user, info) => {
-    if (err || !user) {
-      logger.error(err);
-      return res.status(401).json({
-        success: false,
-        error: err
-      });
-    }
-    req.login(user, {
+  passport.authenticate(
+    "local",
+    {
       session: false
-    }, async (err) => {
-      if (err) {
-        res.send(err);
+    },
+    (err, user) => {
+      if (err || !user) {
+        logger.error(err);
+        return res.status(401).json({
+          success: false,
+          error: err
+        });
       }
+      return req.login(
+        user,
+        {
+          session: false
+        },
+        async error => {
+          if (error) {
+            res.send(error);
+          }
 
-      var refreshToken = randtoken.uid(128);
+          const refreshToken = randtoken.uid(128);
 
-      await models.users.update({
-        refreshToken: refreshToken
-      }, {
-        where: {
-          id: user.id
+          await models.users.update(
+            {
+              refreshToken
+            },
+            {
+              where: {
+                id: user.id
+              }
+            }
+          );
+
+          return res.json({
+            token: auth.generateJwt(user),
+            refreshToken
+          });
         }
-      });
-
-      return res.json({
-        token: auth.generateJwt(user),
-        refreshToken: refreshToken
-      });
-    });
-  })(req, res);
+      );
+    }
+  )(req, res);
 }
 
-async function refreshToken(req, res) {
+async function refresh(req, res) {
   try {
-    let user = await models.users.findOne({
+    const user = await models.users.findOne({
       where: {
         refreshToken: req.body.refreshToken
       }
@@ -52,30 +61,34 @@ async function refreshToken(req, res) {
 
     if (!user) {
       return res.status(401).json({
-        error: 'Refresh token is invalid or expired '
+        error: "Refresh token is invalid or expired "
       });
     }
 
-    req.login(user, {
-      session: false
-    }, (err) => {
-      if (err) {
-        res.send(err);
-      }
+    return req.login(
+      user,
+      {
+        session: false
+      },
+      err => {
+        if (err) {
+          res.send(err);
+        }
 
-      return res.json({
-        token: auth.generateJwt(user)
-      });
-    });
+        return res.json({
+          token: auth.generateJwt(user)
+        });
+      }
+    );
   } catch (err) {
     logger.error(err);
     return res.status(400).json({
       error: err.message || err
-    })
+    });
   }
 }
 
 module.exports = {
   authenticate,
-  refreshToken
+  refresh
 };
