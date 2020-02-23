@@ -45,7 +45,7 @@
     "rand-token": "^0.4.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "sequelize": "^5.9.4",
+    "sequelize": "^5.15.1",
     "tracer": "^0.9.8",
     "trello": "^0.9.1"
   },
